@@ -2,6 +2,16 @@
 
 Site web d'Orange County Lettings
 
+## Architecture
+
+- `oc_lettings_site` : configuration Django, URL principales et page d'accueil.
+- `lettings` : modèles `Address` et `Letting`, vues, URL, administration et templates des locations.
+- `profiles` : modèle `Profile`, vues, URL, administration et templates des profils.
+- `templates/base.html` : template commun aux trois applications.
+
+Les URL publiques restent identiques. Les noms des URL des applications sont
+`lettings:index`, `lettings:letting`, `profiles:index` et `profiles:profile`.
+
 ## Développement local
 
 ### Prérequis
@@ -9,7 +19,10 @@ Site web d'Orange County Lettings
 - Compte GitHub avec accès en lecture à ce repository
 - Git CLI
 - SQLite3 CLI
-- Interpréteur Python, version 3.6 ou supérieure
+- Interpréteur Python 3.8 pour les versions historiques des dépendances de ce projet
+
+Les versions de `pytest` et `six` sont fixées dans `requirements.txt` pour permettre
+l'utilisation de `pytest-django==3.9.0`.
 
 Dans le reste de la documentation sur le développement local, il est supposé que la commande `python` de votre OS shell exécute l'interpréteur Python ci-dessus (à moins qu'un environnement virtuel ne soit activé).
 
@@ -28,7 +41,7 @@ Dans le reste de la documentation sur le développement local, il est supposé q
 - Activer l'environnement `source venv/bin/activate`
 - Confirmer que la commande `python` exécute l'interpréteur Python dans l'environnement virtuel
 `which python`
-- Confirmer que la version de l'interpréteur Python est la version 3.6 ou supérieure `python --version`
+- Confirmer que la version de l'interpréteur Python est la version 3.8 `python --version`
 - Confirmer que la commande `pip` exécute l'exécutable pip dans l'environnement virtuel, `which pip`
 - Pour désactiver l'environnement, `deactivate`
 
@@ -37,9 +50,16 @@ Dans le reste de la documentation sur le développement local, il est supposé q
 - `cd /path/to/Python-OC-Lettings-FR`
 - `source venv/bin/activate`
 - `pip install --requirement requirements.txt`
+- Sauvegarder le fichier `oc-lettings-site.sqlite3` avant la première migration.
+- `python manage.py migrate`
 - `python manage.py runserver`
 - Aller sur `http://localhost:8000` dans un navigateur.
 - Confirmer que le site fonctionne et qu'il est possible de naviguer (vous devriez voir plusieurs profils et locations).
+
+Les migrations créent les nouvelles tables, copient les données existantes avec
+l'ORM Django (en conservant les identifiants et les relations), puis suppriment
+les anciennes tables. Il ne faut pas supprimer la base ni l'ancienne migration
+`oc_lettings_site/migrations/0001_initial.py`.
 
 #### Linting
 
@@ -59,9 +79,9 @@ Dans le reste de la documentation sur le développement local, il est supposé q
 - Ouvrir une session shell `sqlite3`
 - Se connecter à la base de données `.open oc-lettings-site.sqlite3`
 - Afficher les tables dans la base de données `.tables`
-- Afficher les colonnes dans le tableau des profils, `pragma table_info(Python-OC-Lettings-FR_profile);`
+- Afficher les colonnes dans le tableau des profils, `pragma table_info(profiles_profile);`
 - Lancer une requête sur la table des profils, `select user_id, favorite_city from
-  Python-OC-Lettings-FR_profile where favorite_city like 'B%';`
+  profiles_profile where favorite_city like 'B%';`
 - `.quit` pour quitter
 
 #### Panel d'administration

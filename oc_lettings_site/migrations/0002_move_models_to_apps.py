@@ -4,7 +4,15 @@ from django.db import migrations
 
 
 def copy_to_new_apps(apps, schema_editor):
-    """Preserve primary keys and relations using historical models and the ORM."""
+    """Copy records to the new applications, preserving keys and relations.
+
+    Args:
+        apps (StateApps): Historical models at this point in the migration history.
+        schema_editor (BaseDatabaseSchemaEditor): Access to the active database alias.
+
+    Returns:
+        None: Records are written to the new application's tables.
+    """
     database = schema_editor.connection.alias
     for app_label, model_name in [
         ('lettings', 'Address'), ('lettings', 'Letting'), ('profiles', 'Profile'),
@@ -17,7 +25,15 @@ def copy_to_new_apps(apps, schema_editor):
 
 
 def restore_old_models(apps, schema_editor):
-    """Restore data after Django recreates the old tables during a rollback."""
+    """Restore records after Django recreates the old tables during a rollback.
+
+    Args:
+        apps (StateApps): Historical models at this point in the migration history.
+        schema_editor (BaseDatabaseSchemaEditor): Access to the active database alias.
+
+    Returns:
+        None: Records are restored and the new tables are emptied for reapplication.
+    """
     database = schema_editor.connection.alias
     for app_label, model_name in [
         ('lettings', 'Address'), ('lettings', 'Letting'), ('profiles', 'Profile'),

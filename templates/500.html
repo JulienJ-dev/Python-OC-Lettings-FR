@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Server error | Orange County Lettings{% endblock title %}
+
+{% block content %}
+<div class="container px-5 py-5 text-center">
+    <h1 class="display-6">500 - Server error</h1>
+    <p>We are unable to display this page right now. Please try again later.</p>
+    <a class="btn btn-primary" href="{% url 'index' %}">Back to home</a>
+</div>
+{% endblock %}

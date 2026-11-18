@@ -1,7 +1,8 @@
 """Regression checks for letting pages, routes and administration."""
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core.exceptions import ValidationError
+from django.test import TestCase, override_settings
 from django.urls import resolve, reverse
 
 from . import views
@@ -48,6 +49,51 @@ class LettingsTests(TestCase):
         self.assertContains(response, self.letting.title)
         self.assertContains(response, str(self.address))
 
+    def test_empty_index(self):
+        """Explain that no lettings are available when the list is empty."""
+        Letting.objects.all().delete()
+        response = self.client.get(reverse('lettings:index'))
+        self.assertContains(response, 'No lettings are available.')
+        self.assertEqual(list(response.context['lettings_list']), [])
+
+    @override_settings(DEBUG=False)
+    def test_missing_letting_returns_404(self):
+        """Return the custom 404 page when a letting ID does not exist."""
+        response = self.client.get(reverse(
+            'lettings:letting', kwargs={'letting_id': self.letting.pk + 100},
+        ))
+        self.assertTemplateUsed(response, '404.html')
+        self.assertContains(response, '404 - Page not found', status_code=404)
+
+    def test_model_string_representations(self):
+        """Use readable street and letting labels, including in the admin site."""
+        self.assertEqual(str(self.address), '10 Main Street')
+        self.assertEqual(str(self.letting), 'Holiday home')
+
+    def test_address_validation(self):
+        """Accept a valid address and reject values outside the declared limits."""
+        self.address.full_clean()
+        for field, value in [
+            ('number', 10000), ('zip_code', 100000),
+            ('state', 'C'), ('country_iso_code', 'US'), ('street', 'a' * 65),
+        ]:
+            with self.subTest(field=field, value=value):
+                address = Address.objects.get(pk=self.address.pk)
+                setattr(address, field, value)
+                with self.assertRaises(ValidationError):
+                    address.full_clean()
+
+    def test_address_cannot_have_two_lettings(self):
+        """Reject a second letting referring to an already associated address."""
+        duplicate = Letting(title='Another home', address=self.address)
+        with self.assertRaises(ValidationError):
+            duplicate.full_clean()
+
+    def test_deleting_address_removes_letting(self):
+        """Preserve the cascade from an address to its associated letting."""
+        self.address.delete()
+        self.assertFalse(Letting.objects.filter(pk=self.letting.pk).exists())
+
     def test_admin(self):
         """Keep addresses and lettings editable through the admin site."""
         admin = User.objects.create_superuser('admin-test', 'admin@example.com', 'password')
@@ -59,3 +105,12 @@ class LettingsTests(TestCase):
                 'admin:lettings_{}_change'.format(model), args=[instance.pk],
             ))
             self.assertEqual(response.status_code, 200)
+
+    def test_admin_model_plurals(self):
+        """Display Addresses and Lettings with the correct plurals in the admin."""
+        admin = User.objects.create_superuser('plural-test', 'admin@example.com', 'password')
+        self.client.force_login(admin)
+        response = self.client.get(reverse('admin:index'))
+        self.assertContains(response, 'Addresses')
+        self.assertContains(response, 'Lettings')
+        self.assertNotContains(response, 'Addresss')

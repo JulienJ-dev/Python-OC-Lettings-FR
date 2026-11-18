@@ -1,3 +1,5 @@
+"""Route the home page, letting and profile applications, and administration."""
+
 from django.contrib import admin
 from django.urls import include, path
 

@@ -1,3 +1,5 @@
+"""Expose the Django application to WSGI-compatible web servers."""
+
 import os
 
 from django.core.wsgi import get_wsgi_application

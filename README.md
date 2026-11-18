@@ -73,6 +73,39 @@ les anciennes tables. Il ne faut pas supprimer la base ni l'ancienne migration
 - `source venv/bin/activate`
 - `pytest`
 
+Les tests sont regroupés dans le fichier `tests.py` de chaque application. Ils
+vérifient les vues, les URL, les modèles, l'administration, les pages d'erreur et
+la migration des données existantes.
+
+#### Couverture des tests
+
+Après l'installation des dépendances et l'activation de l'environnement virtuel :
+
+```console
+python -m coverage run -m pytest
+python -m coverage report -m
+python -m coverage html
+```
+
+Le rapport HTML est disponible dans `htmlcov/index.html`. La configuration
+`.coveragerc` mesure les lignes et les branches de l'ensemble du projet, y compris
+les migrations et les fichiers de démarrage. Les fichiers `tests.py` et
+l'environnement `venv` sont exclus de cette mesure.
+
+La commande `coverage report` échoue si la couverture est inférieure à 81 %, afin
+de garantir une couverture supérieure à 80 %. Les rapports générés sont ignorés
+par Git.
+
+#### Pages d'erreur
+
+Les templates partagés `templates/404.html` et `templates/500.html` personnalisent
+les réponses d'erreur standard de Django lorsque `DEBUG=False`. Une location ou
+un profil introuvable renvoie une erreur 404. Une erreur inattendue renvoie une
+page 500 sans afficher les détails techniques de l'exception.
+
+La configuration locale conserve `DEBUG=True` pour le développement. Les tests
+des pages d'erreur utilisent temporairement `DEBUG=False`, sans changer ce réglage.
+
 #### Base de données
 
 - `cd /path/to/Python-OC-Lettings-FR`

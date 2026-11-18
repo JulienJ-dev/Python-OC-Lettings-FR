@@ -1,8 +1,10 @@
-"""Regression checks for the home page and the migration of existing data."""
+"""Test the home page, error pages and migration of existing data."""
 
-from django.db import connection
+from unittest.mock import patch
+
+from django.db import DatabaseError, connection
 from django.db.migrations.executor import MigrationExecutor
-from django.test import TestCase, TransactionTestCase
+from django.test import Client, SimpleTestCase, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
 
@@ -17,6 +19,39 @@ class HomeTests(TestCase):
         self.assertContains(response, 'Welcome to Holiday Homes')
         self.assertContains(response, reverse('lettings:index'))
         self.assertContains(response, reverse('profiles:index'))
+
+
+@override_settings(DEBUG=False)
+class ErrorPageTests(SimpleTestCase):
+    """Check Django's error handlers with production-style error responses."""
+
+    def test_unknown_url_uses_custom_404(self):
+        """Return the custom template and status 404 for an unknown route."""
+        response = self.client.get('/unknown-page/')
+        self.assertTemplateUsed(response, '404.html')
+        self.assertContains(response, '404 - Page not found', status_code=404)
+        self.assertContains(response, 'Back to home', status_code=404)
+        self.assertContains(response, 'href="{}"'.format(reverse('index')), status_code=404)
+
+    def test_unexpected_error_uses_custom_500(self):
+        """Render a real error response without exposing exception details."""
+        with patch('oc_lettings_site.views.render', side_effect=RuntimeError('private failure')):
+            response = Client(raise_request_exception=False).get('/')
+        self.assertTemplateUsed(response, '500.html')
+        self.assertContains(response, '500 - Server error', status_code=500)
+        self.assertContains(response, 'Back to home', status_code=500)
+        self.assertNotContains(response, 'private failure', status_code=500)
+        self.assertNotContains(response, 'Traceback', status_code=500)
+
+    def test_database_failure_uses_custom_500(self):
+        """Keep the error page usable when the letting query fails."""
+        with patch(
+            'lettings.views.Letting.objects.all', side_effect=DatabaseError('private query'),
+        ):
+            response = Client(raise_request_exception=False).get(reverse('lettings:index'))
+        self.assertTemplateUsed(response, '500.html')
+        self.assertContains(response, '500 - Server error', status_code=500)
+        self.assertNotContains(response, 'private query', status_code=500)
 
 
 class ModelMigrationTests(TransactionTestCase):

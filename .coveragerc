@@ -1,0 +1,11 @@
+[run]
+branch = True
+source = .
+omit =
+    venv/*
+    */tests.py
+
+[report]
+show_missing = True
+precision = 2
+fail_under = 81

@@ -1,8 +1,18 @@
+"""Run Django management commands from the command line."""
+
 import os
 import sys
 
 
 def main():
+    """Configure Django and execute the command provided in sys.argv.
+
+    Returns:
+        None: The selected management command performs its own output.
+
+    Raises:
+        ImportError: Django is unavailable in the current Python environment.
+    """
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'oc_lettings_site.settings')
     try:
         from django.core.management import execute_from_command_line
